@@ -28,16 +28,16 @@ export function createCodeExecutor(env: Env) {
         "worker.js": `
 import { WorkerEntrypoint } from "cloudflare:workers";
 
-const API_BASE = ${JSON.stringify(apiBase)};
-const ACCOUNT_ID = ${JSON.stringify(accountId)};
+const apiBase = ${JSON.stringify(apiBase)};
+const accountId = ${JSON.stringify(accountId)};
 
 export default class CodeExecutor extends WorkerEntrypoint {
   async evaluate(apiToken) {
-    const createClient = (token) => ({
+    const cloudflare = {
       async request(options) {
         const { method, path, query, body } = options;
 
-        const url = new URL(API_BASE + path);
+        const url = new URL(apiBase + path);
         if (query) {
           for (const [key, value] of Object.entries(query)) {
             if (value !== undefined) {
@@ -49,7 +49,7 @@ export default class CodeExecutor extends WorkerEntrypoint {
         const response = await fetch(url.toString(), {
           method,
           headers: {
-            "Authorization": "Bearer " + token,
+            "Authorization": "Bearer " + apiToken,
             "Content-Type": "application/json",
           },
           body: body ? JSON.stringify(body) : undefined,
@@ -64,12 +64,9 @@ export default class CodeExecutor extends WorkerEntrypoint {
 
         return data;
       }
-    });
+    };
 
     try {
-      const cloudflare = createClient(apiToken);
-      const accountId = ACCOUNT_ID;
-
       const result = await (${code})();
       return { result, err: undefined };
     } catch (err) {
