@@ -145,9 +145,14 @@ async () => {
         account_id: z.string().describe("Your Cloudflare account ID (run `npx wrangler whoami` to see available accounts)"),
       },
     },
-    async ({ code, account_id }) => {
+    async ({ code, account_id }, { authInfo }) => {
       try {
-        const result = await executeCode(code, account_id);
+        const apiToken = authInfo?.token;
+        if (!apiToken) {
+          throw new Error("Authorization required: provide a Cloudflare API token in the Authorization header");
+        }
+
+        const result = await executeCode(code, account_id, apiToken);
         return {
           content: [{ type: "text", text: truncateResponse(result) }],
         };

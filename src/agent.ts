@@ -111,14 +111,19 @@ Examples:
         account_id: z.string().describe("Your Cloudflare account ID (run `npx wrangler whoami` to see available accounts)"),
       },
     },
-    async ({ request, account_id }) => {
+    async ({ request, account_id }, { authInfo }) => {
       try {
         if (!openaiApiKey) {
           throw new Error("OPENAI_API_KEY secret is not set");
         }
 
+        const apiToken = authInfo?.token;
+        if (!apiToken) {
+          throw new Error("Authorization required: please provide a Cloudflare API token in the Authorization header");
+        }
+
         const code = await generateCode(openaiApiKey, request, account_id);
-        const result = await executeCode(code, account_id);
+        const result = await executeCode(code, account_id, apiToken);
 
         return {
           content: [

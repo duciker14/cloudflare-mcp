@@ -1,20 +1,23 @@
 import spec from "./data/spec.json";
 
 interface CodeExecutorEntrypoint {
+  evaluate(
+    apiToken: string
+  ): Promise<{ result: unknown; err?: string; stack?: string }>;
+}
+
+interface SearchExecutorEntrypoint {
   evaluate(): Promise<{ result: unknown; err?: string; stack?: string }>;
 }
 
 export function createCodeExecutor(env: Env) {
-  const apiToken = (env as unknown as Record<string, unknown>)
-    .CLOUDFLARE_API_TOKEN as string | undefined;
+  const apiBase = env.CLOUDFLARE_API_BASE;
 
-  return async (code: string, accountId: string): Promise<unknown> => {
-    if (!apiToken) {
-      throw new Error(
-        "CLOUDFLARE_API_TOKEN secret is not set. Run: wrangler secret put CLOUDFLARE_API_TOKEN"
-      );
-    }
-
+  return async (
+    code: string,
+    accountId: string,
+    apiToken: string
+  ): Promise<unknown> => {
     const workerId = `cloudflare-api-${crypto.randomUUID()}`;
 
     const worker = env.LOADER.get(workerId, () => ({
@@ -23,45 +26,51 @@ export function createCodeExecutor(env: Env) {
       mainModule: "worker.js",
       modules: {
         "worker.js": `
-import { env, WorkerEntrypoint } from "cloudflare:workers";
+import { WorkerEntrypoint } from "cloudflare:workers";
+
+const API_BASE = ${JSON.stringify(apiBase)};
+const ACCOUNT_ID = ${JSON.stringify(accountId)};
 
 export default class CodeExecutor extends WorkerEntrypoint {
-  async evaluate() {
-    try {
-      const { apiBase, apiToken, accountId } = env;
+  async evaluate(apiToken) {
+    // Create cloudflare client in a closure so apiToken is not accessible to user code
+    const createClient = (token) => ({
+      async request(options) {
+        const { method, path, query, body } = options;
 
-      const cloudflare = {
-        async request(options) {
-          const { method, path, query, body } = options;
-
-          const url = new URL(apiBase + path);
-          if (query) {
-            for (const [key, value] of Object.entries(query)) {
-              if (value !== undefined) {
-                url.searchParams.set(key, String(value));
-              }
+        const url = new URL(API_BASE + path);
+        if (query) {
+          for (const [key, value] of Object.entries(query)) {
+            if (value !== undefined) {
+              url.searchParams.set(key, String(value));
             }
           }
-
-          const response = await fetch(url.toString(), {
-            method,
-            headers: {
-              "Authorization": "Bearer " + apiToken,
-              "Content-Type": "application/json",
-            },
-            body: body ? JSON.stringify(body) : undefined,
-          });
-
-          const data = await response.json();
-
-          if (!data.success) {
-            const errors = data.errors.map(e => e.code + ": " + e.message).join(", ");
-            throw new Error("Cloudflare API error: " + errors);
-          }
-
-          return data;
         }
-      };
+
+        const response = await fetch(url.toString(), {
+          method,
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          const errors = data.errors.map(e => e.code + ": " + e.message).join(", ");
+          throw new Error("Cloudflare API error: " + errors);
+        }
+
+        return data;
+      }
+    });
+
+    try {
+      // These are the only variables accessible to user code
+      const cloudflare = createClient(apiToken);
+      const accountId = ACCOUNT_ID;
 
       const result = await (${code})();
       return { result, err: undefined };
@@ -72,15 +81,11 @@ export default class CodeExecutor extends WorkerEntrypoint {
 }
         `,
       },
-      env: {
-        apiBase: env.CLOUDFLARE_API_BASE,
-        apiToken: apiToken,
-        accountId: accountId,
-      },
     }));
 
-    const entrypoint = worker.getEntrypoint() as unknown as CodeExecutorEntrypoint;
-    const response = await entrypoint.evaluate();
+    const entrypoint =
+      worker.getEntrypoint() as unknown as CodeExecutorEntrypoint;
+    const response = await entrypoint.evaluate(apiToken);
 
     if (response.err) {
       throw new Error(response.err);
@@ -120,7 +125,8 @@ export default class SearchExecutor extends WorkerEntrypoint {
       },
     }));
 
-    const entrypoint = worker.getEntrypoint() as unknown as CodeExecutorEntrypoint;
+    const entrypoint =
+      worker.getEntrypoint() as unknown as SearchExecutorEntrypoint;
     const response = await entrypoint.evaluate();
 
     if (response.err) {

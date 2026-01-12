@@ -66,9 +66,6 @@ npm run build:spec   # Generate types from OpenAPI spec
 ### Secrets
 
 ```bash
-# Required for both modes
-wrangler secret put CLOUDFLARE_API_TOKEN
-
 # Required for /agent mode only
 wrangler secret put OPENAI_API_KEY
 ```
@@ -77,6 +74,20 @@ wrangler secret put OPENAI_API_KEY
 
 ```bash
 npm run deploy
+```
+
+### Add to Claude Code
+
+```bash
+claude mcp add --transport http cloudflare-api https://cloudflare-mcp.mattzcarey.workers.dev/mcp \
+  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+```
+
+For Agent mode:
+
+```bash
+claude mcp add --transport http cloudflare-api-agent https://cloudflare-mcp.mattzcarey.workers.dev/agent/mcp \
+  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
 ```
 
 ## Usage
