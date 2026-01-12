@@ -64,12 +64,7 @@ declare const spec: {
 };
 `;
 
-const extractToken = (authHeader: string) => {
-  const match = authHeader.match(/Bearer\s+(\S+)/);
-  return match ? match[1] : null;
-};
-
-export function createServer(env: Env, authHeader: string): McpServer {
+export function createServer(env: Env, apiToken: string): McpServer {
   const server = new McpServer({
     name: "cloudflare-api",
     version: "0.1.0",
@@ -161,13 +156,6 @@ async () => {
     },
     async ({ code, account_id }) => {
       try {
-        const apiToken = extractToken(authHeader);
-        if (!apiToken) {
-          throw new Error(
-            "Authorization required: provide a Cloudflare API token in the Authorization header"
-          );
-        }
-
         const result = await executeCode(code, account_id, apiToken);
         return {
           content: [{ type: "text", text: truncateResponse(result) }],
