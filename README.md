@@ -6,9 +6,29 @@
 
 Uses codemode to avoid dumping too much context to your agent.
 
+## Get Started
+
+### Create API Token
+
+Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with the permissions you need.
+
+### Add to Agent
+
+MCP URL: `https://cloudflare-mcp.mattzcarey.workers.dev/mcp`
+Bearer Token: Your [Cloudflare API Token](https://dash.cloudflare.com/profile/api-tokens)
+
+#### Claude Code
+
+```bash
+export CLOUDFLARE_API_TOKEN="your-token-here"
+
+claude mcp add --transport http cloudflare-api https://cloudflare-mcp.mattzcarey.workers.dev/mcp \
+  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+```
+
 ## The Problem
 
-The Cloudflare OpenAPI spec is **2.3 million tokens** in JSON format. Even compressed to TypeScript endpoint summaries, it's still **~50k tokens**. Traditional MCP servers that expose every endpoint as a tool, or include the full spec in tool descriptions, leak this entire context to the main agent on every request.
+The Cloudflare OpenAPI spec is **2.3 million tokens** in JSON format. Even compressed to TypeScript endpoint summaries, it's still **~50k tokens**. Traditional MCP servers that expose every endpoint as a tool, or include the full spec in tool descriptions, leak this entire context to the main agent.
 
 This server solves the problem by using **code execution** in a [codemode](https://blog.cloudflare.com/code-mode/) pattern - the spec lives on the server, and only the results of queries are returned to the agent.
 
@@ -34,19 +54,6 @@ Agent                         MCP Server
 ```
 
 ## Setup
-
-### Create API Token
-
-Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with the permissions you need.
-
-### Add to Claude Code
-
-```bash
-export CLOUDFLARE_API_TOKEN="your-token-here"
-
-claude mcp add --transport http cloudflare-api https://cloudflare-mcp.mattzcarey.workers.dev/mcp \
-  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-```
 
 ## Usage
 
