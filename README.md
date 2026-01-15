@@ -79,9 +79,19 @@ Agent                         MCP Server
   │◄──[API response]──────────────│
 ```
 
-## Setup
+## Supported Products
+
+Workers, KV, R2, D1, Pages, DNS, Firewall, Load Balancers, Stream, Images, AI Gateway, Vectorize, Access, Gateway, and more. See the full [Cloudflare API schemas](https://github.com/cloudflare/api-schemas).
 
 ## Usage
+
+Once configured, just ask your agent to do things with Cloudflare:
+
+- "List all my Workers"
+- "Create a KV namespace called 'my-cache'"
+- "Add an A record for api.example.com pointing to 192.0.2.1"
+
+The agent will search for the right endpoints and execute the API calls. Here's what happens behind the scenes:
 
 ```javascript
 // 1. Search for endpoints
