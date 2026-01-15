@@ -36,6 +36,14 @@ claude mcp add --transport http cloudflare-api https://cloudflare-mcp.mattzcarey
 <details>
 <summary>opencode.json</summary>
 
+Set your API token as an environment variable:
+
+```bash
+export CLOUDFLARE_API_TOKEN="your-token-here"
+```
+
+Then add to your `opencode.json`:
+
 ```json
 {
   "mcp": {
@@ -43,7 +51,7 @@ claude mcp add --transport http cloudflare-api https://cloudflare-mcp.mattzcarey
       "type": "remote",
       "url": "https://cloudflare-mcp.mattzcarey.workers.dev/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_CLOUDFLARE_API_TOKEN"
+        "Authorization": "Bearer {env:CLOUDFLARE_API_TOKEN}"
       }
     }
   }
